@@ -1,0 +1,25 @@
+{
+  "name": "GLORiOSA Event Display",
+  "short_name": "GLORiOSA",
+  "description": "同人誌・グッズのお品書き／見本誌デモ表示",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f0f0f2",
+  "theme_color": "#181a20",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

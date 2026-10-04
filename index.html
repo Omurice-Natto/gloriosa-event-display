@@ -1,0 +1,318 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no" />
+  <meta name="theme-color" content="#181a20" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="GLORiOSA" />
+  <meta name="format-detection" content="telephone=no" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="apple-touch-icon" href="icon-180.png" />
+  <title>GLORiOSA Event Display</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <main class="page-shell">
+    <section class="demo-header">
+      <div>
+        <strong>GLORiOSA Event Display</strong>
+        <span>iPad PWA / 縦置き・完全オフライン運用</span>
+      </div>
+      <div class="demo-header-actions">
+        <button id="startDemoBtn" class="ui-btn primary">デモ開始</button>
+        <button id="adminBtn" class="ui-btn">⚙ 管理画面</button>
+      </div>
+    </section>
+
+    <section id="device" class="device-shell" aria-label="iPad preview">
+      <div id="appViewport" class="app-viewport">
+        <!-- MENU -->
+        <section id="menuScreen" class="screen active" aria-label="お品書き">
+          <div id="menuCamera" class="menu-camera">
+            <div id="menuBoard" class="menu-board"></div>
+          </div>
+          <div id="menuHint" class="floating-hint">
+            <strong>さわって動かせます</strong>
+            <span>表紙をタップすると読めます</span>
+          </div>
+          <div class="mode-chip">お品書き</div>
+        </section>
+
+        <!-- PREVIEW -->
+        <section id="previewScreen" class="screen preview-screen" aria-label="自動プレビュー">
+          <div class="preview-head">
+            <span id="previewBadge">BOOK PREVIEW</span>
+            <strong id="previewTitle"></strong>
+          </div>
+          <div id="previewPageWrap" class="preview-page-wrap">
+            <img id="previewPage" alt="本のプレビュー" draggable="false" />
+            <canvas id="previewPdfCanvas" class="preview-pdf-canvas hidden" aria-label="PDFプレビュー"></canvas>
+            <div id="previewPageLabel" class="page-label"></div>
+          </div>
+          <div class="preview-touch-hint">
+            <span>タップすると</span>
+            <strong>この本を読めます</strong>
+          </div>
+        </section>
+
+        <!-- READER -->
+        <section id="readerScreen" class="screen reader-screen" aria-label="見本誌を読む">
+          <header class="reader-header">
+            <button id="readerBackBtn" class="reader-back">← お品書きへ</button>
+            <div class="reader-title-wrap">
+              <strong id="readerTitle"></strong>
+              <span id="readerCounter"></span>
+            </div>
+          </header>
+          <div id="readerStage" class="reader-stage">
+            <img id="readerPage" alt="見本誌ページ" draggable="false" />
+            <canvas id="readerPdfCanvas" class="reader-pdf-canvas hidden" aria-label="PDFページ"></canvas>
+            <iframe id="readerPdfFallback" class="reader-pdf-fallback hidden" title="PDF見本誌"></iframe>
+            <div id="readerEmpty" class="reader-empty hidden">
+              <strong>本文がまだ登録されていません</strong>
+              <span>管理画面からページ画像またはPDFを追加できます</span>
+            </div>
+            <div id="readerFinalNote" class="reader-final-note hidden">
+              <strong>読んでくれてありがとうございます</strong>
+              <span>左 → 右へスワイプすると表紙に戻ります</span>
+            </div>
+          </div>
+          <div id="readerGuide" class="reader-guide">次ページ：左 → 右へスワイプ</div>
+          <button id="readerNext" class="page-arrow left" aria-label="次のページ">‹</button>
+          <button id="readerPrev" class="page-arrow right" aria-label="前のページ">›</button>
+        </section>
+
+        <!-- GOODS ZOOM -->
+        <section id="goodsScreen" class="screen goods-screen" aria-label="グッズ画像拡大">
+          <header class="goods-header">
+            <button id="goodsBackBtn" class="reader-back">← お品書きへ</button>
+            <div>
+              <strong id="goodsTitle"></strong>
+              <span id="goodsSpec"></span>
+            </div>
+          </header>
+          <div class="goods-stage"><img id="goodsImage" alt="グッズ拡大画像" draggable="false" /></div>
+          <p id="goodsSummary" class="goods-summary"></p>
+        </section>
+
+        <!-- HOME/EMPTY -->
+        <section id="emptyScreen" class="screen empty-screen" aria-label="未登録">
+          <img id="emptyLogo" src="assets/logo-black.png" alt="GLORiOSA" />
+          <h1>Event Display</h1>
+          <p>まだ頒布物が登録されていません。</p>
+          <button id="emptyAdminBtn" class="ui-btn primary">＋ 管理画面で登録</button>
+        </section>
+
+        <button id="floatingAdmin" class="floating-admin" aria-label="管理画面">⚙</button>
+      </div>
+    </section>
+
+    <p class="demo-note">Safariで初回準備後、「ホーム画面に追加」するとiPadアプリのように全画面・オフラインで使えます。</p>
+  </main>
+
+  <!-- ADMIN -->
+  <div id="adminOverlay" class="admin-overlay hidden" role="dialog" aria-modal="true" aria-label="管理画面">
+    <div class="admin-panel">
+      <header class="admin-topbar">
+        <div>
+          <strong>管理画面</strong>
+          <span>イベント情報・頒布物・デモ動作を設定</span>
+        </div>
+        <button id="closeAdminBtn" class="ui-btn">展示へ戻る</button>
+      </header>
+
+      <nav class="admin-tabs">
+        <button class="admin-tab active" data-tab="event">イベント</button>
+        <button class="admin-tab" data-tab="products">頒布物</button>
+        <button class="admin-tab" data-tab="design">デザイン</button>
+        <button class="admin-tab" data-tab="demo">デモ設定</button>
+        <button class="admin-tab" data-tab="touch">タッチ設定</button>
+        <button class="admin-tab" data-tab="device">iPad</button>
+        <button class="admin-tab" data-tab="data">データ</button>
+      </nav>
+
+      <div class="admin-content">
+        <section class="admin-section active" data-panel="event">
+          <h2>イベント設定</h2>
+          <div class="form-grid">
+            <label>サークル名<input id="eventCircle" type="text" /></label>
+            <label>イベント名<input id="eventName" type="text" /></label>
+            <label>スペース番号<input id="eventSpace" type="text" /></label>
+            <label>ロゴ使用
+              <select id="logoMode">
+                <option value="auto">自動切替</option>
+                <option value="black">黒</option>
+                <option value="white">白</option>
+              </select>
+            </label>
+          </div>
+          <div class="logo-preview-row">
+            <div><span>黒ロゴ</span><img id="logoBlackPreview" src="assets/logo-black.png" alt="黒ロゴ" /></div>
+            <div><span>白ロゴ</span><div class="dark-preview"><img id="logoWhitePreview" src="assets/logo-white.png" alt="白ロゴ" /></div></div>
+          </div>
+          <div class="inline-actions">
+            <label class="file-btn">黒ロゴを変更<input id="logoBlackUpload" type="file" accept="image/*" hidden /></label>
+            <label class="file-btn">白ロゴを変更<input id="logoWhiteUpload" type="file" accept="image/*" hidden /></label>
+          </div>
+          <div class="qr-admin-block">
+            <h3>X / BOOTH QRコード</h3>
+            <p>トップのサークルカードに表示します。SVG / PNG / JPGを登録できます。</p>
+            <div class="qr-preview-row">
+              <div><span>X</span><img id="qrXPreview" src="assets/qr-x.svg" alt="X QRコード" /></div>
+              <div><span>BOOTH</span><img id="qrBoothPreview" src="assets/qr-booth.svg" alt="BOOTH QRコード" /></div>
+            </div>
+            <div class="inline-actions">
+              <label class="file-btn">X QRを変更<input id="qrXUpload" type="file" accept="image/*,.svg" hidden /></label>
+              <label class="file-btn">BOOTH QRを変更<input id="qrBoothUpload" type="file" accept="image/*,.svg" hidden /></label>
+            </div>
+          </div>
+          <button id="saveEventBtn" class="ui-btn primary">イベント設定を保存</button>
+        </section>
+
+        <section class="admin-section" data-panel="products">
+          <div class="section-title-row">
+            <div><h2>頒布物</h2><p>登録順が、お品書きと本プレビューの基本順になります。</p></div>
+            <button id="addProductBtn" class="ui-btn primary">＋ 頒布物を追加</button>
+          </div>
+          <div id="productAdminList" class="product-admin-list"></div>
+        </section>
+
+        <section class="admin-section" data-panel="design">
+          <h2>お品書きデザイン</h2>
+          <p>デフォルト＋4つのプリセット＋自由設定から選べます。</p>
+          <div class="palette-grid">
+            <button class="palette-option" data-palette="default" type="button"><span class="palette-swatch" style="--pbg:#f0f0f2;--pcard:#ffffff;--paccent:#181a20"></span><strong>デフォルト</strong><small>現在の配色</small></button>
+            <button class="palette-option" data-palette="roseQuartz" type="button"><span class="palette-swatch" style="--pbg:#f4e7ee;--pcard:#fffafb;--paccent:#b85d84"></span><strong>Rose Quartz</strong><small>落ち着いたローズ</small></button>
+            <button class="palette-option" data-palette="sparkleCitrus" type="button"><span class="palette-swatch" style="--pbg:#f2f9d8;--pcard:#fffdf3;--paccent:#98c93c"></span><strong>Sparkle Citrus</strong><small>果実・ライム系</small></button>
+            <button class="palette-option" data-palette="zinraiViolet" type="button"><span class="palette-swatch" style="--pbg:#140d25;--pcard:#281940;--paccent:#ca4cff"></span><strong>ZINRAI Violet</strong><small>紫×ネオン</small></button>
+            <button class="palette-option" data-palette="aquaNocturne" type="button"><span class="palette-swatch" style="--pbg:#0d1b26;--pcard:#142b38;--paccent:#59d6d0"></span><strong>Aqua Nocturne</strong><small>深い青×アクア</small></button>
+            <button class="palette-option" data-palette="custom" type="button"><span class="palette-swatch custom-swatch" style="--pbg:#eeeeee;--pcard:#ffffff;--paccent:#555555"></span><strong>カスタム</strong><small>自由に設定</small></button>
+          </div>
+          <div class="custom-color-panel">
+            <h3>カスタムカラー</h3>
+            <div class="color-control-grid">
+              <label>お品書き背景<div class="color-control"><input id="customBg" type="color" /><input id="customBgHex" type="text" maxlength="7" /></div></label>
+              <label>紹介カード<div class="color-control"><input id="customCard" type="color" /><input id="customCardHex" type="text" maxlength="7" /></div></label>
+              <label>アクセント<div class="color-control"><input id="customAccent" type="color" /><input id="customAccentHex" type="text" maxlength="7" /></div></label>
+            </div>
+            <p class="small-note">カスタム色を使う場合は上の「カスタム」を選択してください。文字色は背景の明るさから自動調整します。</p>
+          </div>
+          <button id="saveDesignBtn" class="ui-btn primary">デザイン設定を保存</button>
+        </section>
+
+        <section class="admin-section" data-panel="demo">
+          <h2>デモ設定</h2>
+          <div class="settings-groups">
+            <fieldset>
+              <legend>お品書き</legend>
+              <label>START → END（移動時間） <div class="number-unit"><input id="menuForwardSeconds" type="number" min="5" max="180" step="1" /><span>秒</span></div></label>
+              <label>END → START（移動時間） <div class="number-unit"><input id="menuBackwardSeconds" type="number" min="5" max="180" step="1" /><span>秒</span></div></label>
+              <label>サークルカード滞在 <div class="number-unit"><input id="headerFocusSeconds" type="number" min="0" max="30" step="0.5" /><span>秒</span></div></label>
+              <label>商品カード標準滞在 <div class="number-unit"><input id="cardFocusSeconds" type="number" min="0" max="30" step="0.5" /><span>秒</span></div></label>
+            </fieldset>
+            <fieldset>
+              <legend>同人誌プレビュー</legend>
+              <label>表紙表示 <div class="number-unit"><input id="coverSeconds" type="number" min="1" max="60" step="1" /><span>秒</span></div></label>
+              <label>本文1ページ <div class="number-unit"><input id="pageSeconds" type="number" min="1" max="60" step="1" /><span>秒</span></div></label>
+              <label>本文表示枚数 <div class="number-unit"><input id="previewPageCount" type="number" min="0" max="50" step="1" /><span>P</span></div></label>
+              <label>PDFレンダリングモード
+                <select id="pdfRenderMode">
+                  <option value="toneSafe">iPadトーン補正（推奨）</option>
+                  <option value="highQuality">高精細モード</option>
+                </select>
+              </label>
+              <label>PDF描画倍率 <div class="number-unit"><input id="pdfRenderPercent" type="number" min="100" max="300" step="10" /><span>%</span></div></label>
+              <p class="small-note">100%は表示領域の物理解像度相当です。トーン補正モードは指定倍率で一度高解像度描画し、多段階でiPad相当解像度へ縮小してスクリーントーンのモアレを抑えます。高精細モードは高解像度Canvasをそのまま表示領域へフィットさせ、iPad実機で比較できるよう残しています。</p>
+            </fieldset>
+            <fieldset>
+              <legend>操作・切替</legend>
+              <label>手動操作後の自動再開 <div class="number-unit"><input id="resumeSeconds" type="number" min="1" max="120" step="1" /><span>秒</span></div></label>
+              <label>閲覧放置時のお品書き復帰 <div class="number-unit"><input id="readerTimeoutSeconds" type="number" min="10" max="600" step="5" /><span>秒</span></div></label>
+              <label>画面切替フェード <div class="number-unit"><input id="fadeSeconds" type="number" min="0" max="3" step="0.1" /><span>秒</span></div></label>
+            </fieldset>
+          </div>
+          <button id="saveDemoBtn" class="ui-btn primary">デモ設定を保存</button>
+        </section>
+
+        <section class="admin-section" data-panel="touch">
+          <h2>タッチ設定</h2>
+          <p>ゴーストタッチを完全には判別できないため、「短すぎる接触」と「操作直後の連打」を無視します。</p>
+          <div class="settings-groups">
+            <fieldset>
+              <legend>判定</legend>
+              <label>お品書きタップ成立 <div class="number-unit"><input id="menuHoldMs" type="number" min="50" max="800" step="10" /><span>ms</span></div></label>
+              <label>プレビューから閲覧 <div class="number-unit"><input id="previewHoldMs" type="number" min="50" max="1200" step="10" /><span>ms</span></div></label>
+              <label>ドラッグ判定 <div class="number-unit"><input id="dragThreshold" type="number" min="2" max="50" step="1" /><span>px</span></div></label>
+              <label>操作後クールダウン <div class="number-unit"><input id="cooldownMs" type="number" min="0" max="2000" step="10" /><span>ms</span></div></label>
+            </fieldset>
+          </div>
+          <div id="touchTest" class="touch-test">
+            <strong>タッチテスト</strong>
+            <span>この枠を押して、接触時間を確認できます。</span>
+            <div id="touchTestResult">待機中</div>
+          </div>
+          <button id="saveTouchBtn" class="ui-btn primary">タッチ設定を保存</button>
+        </section>
+
+        <section class="admin-section" data-panel="device">
+          <h2>iPad / オフライン設定</h2>
+          <p>イベント前にWi-Fi環境で一度準備し、機内モードで起動できることを確認してください。</p>
+          <div class="device-status-grid">
+            <article><span>起動モード</span><strong id="deviceDisplayMode">確認中</strong></article>
+            <article><span>オフラインキャッシュ</span><strong id="deviceSwStatus">確認中</strong></article>
+            <article><span>PDF.js</span><strong id="devicePdfStatus">未確認</strong></article>
+            <article><span>ストレージ</span><strong id="deviceStorageStatus">確認中</strong></article>
+          </div>
+          <div class="ipad-actions">
+            <button id="prepareOfflineBtn" class="ui-btn primary">オフライン用PDF機能を準備</button>
+            <button id="persistStorageBtn" class="ui-btn">保存領域を保護</button>
+            <button id="refreshDeviceStatusBtn" class="ui-btn">状態を再確認</button>
+          </div>
+          <label class="ipad-check"><input id="keepAwake" type="checkbox" /> 展示中は画面をスリープさせない（対応端末のみ）</label>
+          <div class="ipad-help">
+            <h3>iPadへ入れる手順</h3>
+            <ol>
+              <li>Wi-Fi接続中にSafariでこのページを開きます。</li>
+              <li>この画面で「オフライン用PDF機能を準備」を押します。</li>
+              <li>Safariの共有ボタンから「ホーム画面に追加」を選びます。</li>
+              <li>ホーム画面のGLORiOSAアイコンから起動します。</li>
+              <li>必要な本・PDF・画像を管理画面から登録します。</li>
+              <li>最後に機内モードにして、デモとPDF閲覧が動くか確認します。</li>
+            </ol>
+          </div>
+          <button id="saveDeviceBtn" class="ui-btn primary">iPad設定を保存</button>
+        </section>
+
+        <section class="admin-section" data-panel="data">
+          <h2>データ</h2>
+          <div class="data-cards">
+            <article>
+              <h3>ブランク状態にする</h3>
+              <p>実際の運用を想定して、登録内容を空にします。管理画面から1件ずつ登録できます。</p>
+              <button id="blankBtn" class="ui-btn danger">すべての登録を空にする</button>
+            </article>
+            <article>
+              <h3>今回のデモデータを読み込む</h3>
+              <p>voice of echo / 既刊2冊 / アクスタと、イベント情報を復元します。</p>
+              <button id="seedBtn" class="ui-btn">デモデータを再読み込み</button>
+            </article>
+            <article>
+              <h3>設定を書き出し / 読み込み</h3>
+              <p>画像以外の設定をJSONでバックアップできます。</p>
+              <div class="inline-actions">
+                <button id="exportBtn" class="ui-btn">JSONを書き出す</button>
+                <label class="file-btn">JSONを読み込む<input id="importInput" type="file" accept="application/json" hidden /></label>
+              </div>
+            </article>
+          </div>
+        </section>
+      </div>
+    </div>
+  </div>
+
+  <script src="config.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
