@@ -1,4 +1,4 @@
-GLORiOSA Event Display - iPad PWA v1
+GLORiOSA Event Display - iPad PWA v2
 
 【目的】
 iPad Pro 11インチを縦置きし、ネット環境なしのイベント会場で
@@ -32,4 +32,10 @@ PDF.jsは初回Wi-Fi接続時にCDNから取得し、Service Workerへキャッ�
 登録画像/PDF: IndexedDB
 端末側のWebサイトデータを削除すると消える可能性があるため、イベント前にデータ確認を推奨します。
 
-Build: iPad PWA v1.0
+Build: iPad PWA v2.0
+
+【v2変更点】
+・紹介カードの既定サイズをiPad縦画面幅の78%に拡大。
+・管理画面 > デモ設定 > お品書き から60〜85%で調整可能。
+・カードの縦寸法も同比率で拡大し、最大で画面高さの約82%に収まるよう自動調整。
+・横画面用レイアウトは対象外。manifestのorientationはportrait固定。

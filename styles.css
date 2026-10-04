@@ -135,3 +135,8 @@ body{min-height:100%;padding:env(safe-area-inset-top) env(safe-area-inset-right)
 .ipad-help{background:#fff;border:1px solid #d8dbe1;border-radius:16px;padding:16px;margin:16px 0}
 .ipad-help h3{margin:0 0 8px}.ipad-help ol{margin:0;padding-left:1.35em;line-height:1.8;color:#555b66;font-size:13px}
 @media(max-width:900px){.device-status-grid{grid-template-columns:1fr 1fr}}
+
+/* iPad PWA v2: adjustable large menu cards (portrait only) */
+.menu-board{--menu-card-scale:1}
+.header-card,.product-card{transform:scale(var(--menu-card-scale));transform-origin:0 0;will-change:transform}
+.product-card.pressed{transform:scale(var(--menu-card-scale));outline:6px solid rgba(76,119,255,.25)}

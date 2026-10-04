@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const BUILD = window.GLORIOSA_BUILD || {blank:false,version:'iPad PWA'};
+  const BUILD = window.GLORIOSA_BUILD || {blank:false,version:'iPad PWA v2.0'};
   const PDFJS_SCRIPT_URL = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
   const PDFJS_WORKER_URL = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 
@@ -33,6 +33,7 @@
       menuBackwardSeconds: 25,
       headerFocusSeconds: 3,
       cardFocusSeconds: 3,
+      menuCardSizePercent: 78,
       coverSeconds: 5,
       pageSeconds: 7,
       previewPageCount: 3,
@@ -218,11 +219,21 @@
     // 左列・右列のどちらをフォーカスしても、カード中心が必ず画面中心に来るよう、
     // 現在の表示領域幅から左右余白とボード幅を動的に決める。
     const vp=$('#appViewport');
-    const cardW=410, cardH=560, rowGap=650, columnTravel=730;
+    const baseCardW=410, baseCardH=560;
     const viewportW=Math.max(1,vp.clientWidth), viewportH=Math.max(1,vp.clientHeight);
-    const sidePad=Math.max(40, Math.round(viewportW/2 - cardW/2));
-    const verticalPad=Math.max(40, Math.round(viewportH/2 - cardH/2));
-    const xLeft=sidePad, xRight=sidePad+columnTravel, baseTop=verticalPad;
+    // iPad縦置き専用。カード幅を画面幅に対する割合で指定し、縦方向は最大82%に収める。
+    // 既定78%で、紹介カードがおおむね画面の7〜8割を占める。
+    const cardSizePercent=clamp(Number(state.demo.menuCardSizePercent||78),60,85);
+    const scaleByWidth=(viewportW*(cardSizePercent/100))/baseCardW;
+    const scaleByHeight=(viewportH*0.82)/baseCardH;
+    const cardScale=Math.max(1,Math.min(scaleByWidth,scaleByHeight));
+    const cardW=baseCardW*cardScale, cardH=baseCardH*cardScale;
+    board.style.setProperty('--menu-card-scale',String(cardScale));
+    const sidePad=Math.max(28, Math.round(viewportW/2 - cardW/2));
+    const verticalPad=Math.max(28, Math.round(viewportH/2 - cardH/2));
+    const columnGap=Math.max(140,Math.round(cardW*0.48));
+    const rowGap=Math.round(cardH + Math.max(120,cardH*0.15));
+    const xLeft=sidePad, xRight=sidePad+cardW+columnGap, baseTop=verticalPad;
     const boardW=xRight+cardW+sidePad;
     board.style.width=`${boardW}px`;
     const header=document.createElement('article'); header.className='header-card focus-card'; header.dataset.focusOrder='0'; header.dataset.dwell=String(state.demo.headerFocusSeconds||0);
@@ -283,8 +294,10 @@
   function cameraTargetFor(el){
     const m=boardMetrics();
     if(!el) return {x:0,y:0};
-    const cx=el.offsetLeft + el.offsetWidth/2;
-    const cy=el.offsetTop + el.offsetHeight/2;
+    const board=$('#menuBoard');
+    const scale=Number.parseFloat(getComputedStyle(board).getPropertyValue('--menu-card-scale'))||1;
+    const cx=el.offsetLeft + (el.offsetWidth*scale)/2;
+    const cy=el.offsetTop + (el.offsetHeight*scale)/2;
     return {x:clamp(cx-m.vw/2,0,m.maxX), y:clamp(cy-m.vh/2,0,m.maxY)};
   }
 
@@ -669,7 +682,7 @@
   function fillAdmin(){
     $('#eventCircle').value=state.event.circle||''; $('#eventName').value=state.event.name||''; $('#eventSpace').value=state.event.space||''; $('#logoMode').value=state.event.logoMode||'auto'; fillDesignAdmin();
     setImg($('#logoBlackPreview'),state.event.logoBlack); setImg($('#logoWhitePreview'),state.event.logoWhite); setImg($('#qrXPreview'),state.event.qrX); setImg($('#qrBoothPreview'),state.event.qrBooth);
-    const d=state.demo; ['menuForwardSeconds','menuBackwardSeconds','headerFocusSeconds','cardFocusSeconds','coverSeconds','pageSeconds','previewPageCount','resumeSeconds','readerTimeoutSeconds','fadeSeconds','pdfRenderPercent'].forEach(k=>{const el=$('#'+k); if(el) el.value=d[k];}); const pdfMode=$('#pdfRenderMode'); if(pdfMode) pdfMode.value=d.pdfRenderMode||'toneSafe';
+    const d=state.demo; ['menuForwardSeconds','menuBackwardSeconds','headerFocusSeconds','cardFocusSeconds','menuCardSizePercent','coverSeconds','pageSeconds','previewPageCount','resumeSeconds','readerTimeoutSeconds','fadeSeconds','pdfRenderPercent'].forEach(k=>{const el=$('#'+k); if(el) el.value=d[k];}); const pdfMode=$('#pdfRenderMode'); if(pdfMode) pdfMode.value=d.pdfRenderMode||'toneSafe';
     const t=state.touch; ['menuHoldMs','previewHoldMs','dragThreshold','cooldownMs'].forEach(k=>$('#'+k).value=t[k]);
     const ka=$('#keepAwake'); if(ka) ka.checked=state.device?.keepAwake!==false;
     updateDeviceStatus();
@@ -762,7 +775,7 @@
       saveState(); fillDesignAdmin(); alert('デザイン設定を保存しました');
     };
     $('#addProductBtn').onclick=addProduct;
-    $('#saveDemoBtn').onclick=()=>{['menuForwardSeconds','menuBackwardSeconds','headerFocusSeconds','cardFocusSeconds','coverSeconds','pageSeconds','previewPageCount','resumeSeconds','readerTimeoutSeconds','fadeSeconds','pdfRenderPercent'].forEach(k=>{const el=$('#'+k); if(el) state.demo[k]=Number(el.value);}); const pdfMode=$('#pdfRenderMode'); if(pdfMode) state.demo.pdfRenderMode=pdfMode.value; saveState();applyFade();alert('デモ設定を保存しました');};
+    $('#saveDemoBtn').onclick=()=>{['menuForwardSeconds','menuBackwardSeconds','headerFocusSeconds','cardFocusSeconds','menuCardSizePercent','coverSeconds','pageSeconds','previewPageCount','resumeSeconds','readerTimeoutSeconds','fadeSeconds','pdfRenderPercent'].forEach(k=>{const el=$('#'+k); if(el) state.demo[k]=Number(el.value);}); const pdfMode=$('#pdfRenderMode'); if(pdfMode) state.demo.pdfRenderMode=pdfMode.value; saveState();applyFade();alert('デモ設定を保存しました');};
     $('#saveTouchBtn').onclick=()=>{['menuHoldMs','previewHoldMs','dragThreshold','cooldownMs'].forEach(k=>state.touch[k]=Number($('#'+k).value));saveState();alert('タッチ設定を保存しました');};
     $('#blankBtn').onclick=()=>{if(confirm('登録内容をブランクにします。よろしいですか？')){const defaults=demoSeed();state={event:{...defaults.event,circle:'',name:'',space:''},demo:defaults.demo,touch:defaults.touch,device:defaults.device,products:[]};saveState();fillAdmin();alert('ブランク状態にしました');}};
     $('#seedBtn').onclick=()=>{if(confirm('今回のデモデータに戻しますか？')){state=demoSeed();saveState();fillAdmin();alert('デモデータを読み込みました');}};
